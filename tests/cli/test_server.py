@@ -133,7 +133,7 @@ def test_automatic_reloading(tmp_path):
                 response = requests.post(url, json=query)
                 assert response.status_code == 200
                 assert response.json() == {"data": {"number": 42}}
-            except requests.RequestException:
+            except (requests.RequestException, requests.ConnectionError):
                 time.sleep(0.5)
 
         schema_file_path.write_text(source.format(1234))
