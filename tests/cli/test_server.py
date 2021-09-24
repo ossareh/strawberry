@@ -107,7 +107,15 @@ def test_automatic_reloading(tmp_path):
     schema_file_path.touch()
     schema_file_path.write_text(source.format(42))
 
-    args = ["poetry", "run", "strawberry", "server", "--app-dir", tmp_path, "schema"]
+    args = [
+        "poetry",
+        "run",
+        "strawberry",
+        "server",
+        "--app-dir",
+        str(tmp_path),
+        "schema",
+    ]
 
     with subprocess.Popen(
         args,
