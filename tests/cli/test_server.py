@@ -112,6 +112,8 @@ def test_automatic_reloading(tmp_path):
         "run",
         "strawberry",
         "server",
+        "--host",
+        "127.0.0.1",
         "--app-dir",
         # Python Versions < 3.8 on Windows do not have an Iterable WindowsPath
         # casting to str prevents this from throwing a TypeError
@@ -138,7 +140,6 @@ def test_automatic_reloading(tmp_path):
             except (
                 requests.RequestException,
                 requests.ConnectionError,
-                ConnectionError,
             ):
                 time.sleep(0.5)
 
