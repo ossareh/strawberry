@@ -112,8 +112,6 @@ def test_automatic_reloading(tmp_path):
         "run",
         "strawberry",
         "server",
-        "--host",
-        "127.0.0.1",
         "--app-dir",
         # Python Versions < 3.8 on Windows do not have an Iterable WindowsPath
         # casting to str prevents this from throwing a TypeError
@@ -140,8 +138,9 @@ def test_automatic_reloading(tmp_path):
             except (
                 requests.RequestException,
                 requests.ConnectionError,
+                ConnectionRefusedError,
             ):
-                time.sleep(0.5)
+                time.sleep(2)
 
         schema_file_path.write_text(source.format(1234))
 
@@ -152,7 +151,7 @@ def test_automatic_reloading(tmp_path):
                 assert response.status_code == 200
                 assert response.json() == {"data": {"number": 1234}}
             except AssertionError:
-                time.sleep(0.5)
+                time.sleep(2)
 
         os.killpg(proc.pid, signal.SIGKILL)
         proc.communicate(timeout=10)
