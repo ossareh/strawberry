@@ -110,7 +110,10 @@ def test_automatic_reloading(tmp_path):
     args = ["poetry", "run", "strawberry", "server", "--app-dir", tmp_path, "schema"]
 
     with subprocess.Popen(
-        args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, preexec_fn=os.setsid
+        args,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
     ) as proc:
 
         url = "http://127.0.0.1:8000/graphql"
