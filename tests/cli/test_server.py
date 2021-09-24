@@ -107,10 +107,23 @@ def test_automatic_reloading(tmp_path):
     schema_file_path.touch()
     schema_file_path.write_text(source.format(42))
 
-    args = ["poetry", "run", "strawberry", "server", "--app-dir", tmp_path, "schema"]
+    args = [
+        "poetry",
+        "run",
+        "strawberry",
+        "server",
+        "--app-dir",
+        # Python Versions < 3.8 on Windows do not have an Iterable WindowsPath
+        # casting to str prevents this from throwing a TypeError
+        str(tmp_path),
+        "schema",
+    ]
 
     with subprocess.Popen(
-        args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, preexec_fn=os.setsid
+        args,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
     ) as proc:
 
         url = "http://127.0.0.1:8000/graphql"
@@ -122,8 +135,12 @@ def test_automatic_reloading(tmp_path):
                 response = requests.post(url, json=query)
                 assert response.status_code == 200
                 assert response.json() == {"data": {"number": 42}}
-            except requests.RequestException:
-                time.sleep(0.5)
+            except (
+                requests.RequestException,
+                requests.ConnectionError,
+                ConnectionRefusedError,
+            ):
+                time.sleep(2)
 
         schema_file_path.write_text(source.format(1234))
 
@@ -134,7 +151,7 @@ def test_automatic_reloading(tmp_path):
                 assert response.status_code == 200
                 assert response.json() == {"data": {"number": 1234}}
             except AssertionError:
-                time.sleep(0.5)
+                time.sleep(2)
 
         os.killpg(proc.pid, signal.SIGKILL)
         proc.communicate(timeout=10)
