@@ -113,6 +113,8 @@ def test_automatic_reloading(tmp_path):
         "strawberry",
         "server",
         "--app-dir",
+        # Python Versions < 3.8 on Windows do not have an Iterable WindowsPath
+        # casting to str prevents this from throwing a TypeError
         str(tmp_path),
         "schema",
     ]
@@ -133,7 +135,11 @@ def test_automatic_reloading(tmp_path):
                 response = requests.post(url, json=query)
                 assert response.status_code == 200
                 assert response.json() == {"data": {"number": 42}}
-            except (requests.RequestException, requests.ConnectionError):
+            except (
+                requests.RequestException,
+                requests.ConnectionError,
+                ConnectionError,
+            ):
                 time.sleep(0.5)
 
         schema_file_path.write_text(source.format(1234))
