@@ -8,6 +8,7 @@ import pytest
 
 import requests
 import uvicorn
+from xprocess import ProcessStarter
 
 from strawberry.cli.commands.server import server as cmd_server
 
@@ -92,7 +93,25 @@ def test_debug_server_routes(debug_server_client):
         assert response.status_code == 200
 
 
-def test_automatic_reloading(tmp_path):
+def test_automatic_reloading(xprocess, tmp_path):
+
+    # used to start our dev server
+    class Starter(ProcessStarter):
+        pattern = "^Running strawberry on http.+"
+        terminate_on_interrupt = True
+        timeout = 10
+        args = [
+            "poetry",
+            "run",
+            "strawberry",
+            "server",
+            "--app-dir",
+            # Python Versions < 3.8 on Windows do not have an Iterable WindowsPath
+            # casting to str prevents this from throwing a TypeError on Windows
+            str(tmp_path),
+            "schema",
+        ]
+
     source = (
         "import strawberry\n"
         "@strawberry.type\n"
@@ -107,53 +126,25 @@ def test_automatic_reloading(tmp_path):
     schema_file_path.touch()
     schema_file_path.write_text(source.format(42))
 
-    args = [
-        "poetry",
-        "run",
-        "strawberry",
-        "server",
-        "--app-dir",
-        # Python Versions < 3.8 on Windows do not have an Iterable WindowsPath
-        # casting to str prevents this from throwing a TypeError on Windows
-        str(tmp_path),
-        "schema",
-    ]
+    xprocess.ensure("dev_server", Starter)
 
-    with subprocess.Popen(
-        args,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        start_new_session=True,
-    ) as proc:
+    url = "http://127.0.0.1:8000/graphql"
+    query = {"query": "{ number }"}
 
-        url = "http://127.0.0.1:8000/graphql"
-        query = {"query": "{ number }"}
+    response = requests.post(url, json=query, proxies={"http": None, "https": None})
+    assert response.status_code == 200
+    assert response.json() == {"data": {"number": 42}}
 
-        # It takes uvicorn some time to initially start the server
-        for i in range(5):
-            try:
-                response = requests.post(
-                    url, json=query, proxies={"http": None, "https": None}
-                )
-                assert response.status_code == 200
-                assert response.json() == {"data": {"number": 42}}
-            except (
-                requests.RequestException,
-                requests.ConnectionError,
-                ConnectionRefusedError,
-            ):
-                time.sleep(2.0)
+    # trigger reload
+    schema_file_path.write_text(source.format(1234))
 
-        schema_file_path.write_text(source.format(1234))
+    # It takes uvicorn some time to detect file changes
+    for _ in range(5):
+        try:
+            response = requests.post(url, json=query)
+            assert response.status_code == 200
+            assert response.json() == {"data": {"number": 1234}}
+        except AssertionError:
+            time.sleep(2)
 
-        # It takes uvicorn some time to detect file changes
-        for _ in range(5):
-            try:
-                response = requests.post(url, json=query)
-                assert response.status_code == 200
-                assert response.json() == {"data": {"number": 1234}}
-            except AssertionError:
-                time.sleep(2)
-
-        os.killpg(proc.pid, signal.SIGKILL)
-        proc.communicate(timeout=10)
+    xprocess.getinfo("dev_server").terminate()
