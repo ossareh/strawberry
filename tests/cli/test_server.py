@@ -126,8 +126,9 @@ def test_automatic_reloading(tmp_path):
         start_new_session=True,
     ) as proc:
 
-        url = "http://127.0.0.1:8000/graphql"
+        url = "http://localhost:8000/graphql"
         query = {"query": "{ number }"}
+        os.environ["NO_PROXY"] = "http://localhost:8000/"
 
         # It takes uvicorn some time to initially start the server
         for i in range(5):
@@ -140,7 +141,7 @@ def test_automatic_reloading(tmp_path):
                 requests.ConnectionError,
                 ConnectionRefusedError,
             ):
-                time.sleep(2)
+                time.sleep(0.5)
 
         schema_file_path.write_text(source.format(1234))
 
