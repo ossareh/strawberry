@@ -114,7 +114,7 @@ def test_automatic_reloading(tmp_path):
         "server",
         "--app-dir",
         # Python Versions < 3.8 on Windows do not have an Iterable WindowsPath
-        # casting to str prevents this from throwing a TypeError
+        # casting to str prevents this from throwing a TypeError on Windows
         str(tmp_path),
         "schema",
     ]
@@ -126,14 +126,15 @@ def test_automatic_reloading(tmp_path):
         start_new_session=True,
     ) as proc:
 
-        url = "http://localhost:8000/graphql"
+        url = "http://127.0.0.1:8000/graphql"
         query = {"query": "{ number }"}
-        os.environ["NO_PROXY"] = "http://localhost:8000/"
 
         # It takes uvicorn some time to initially start the server
         for i in range(5):
             try:
-                response = requests.post(url, json=query)
+                response = requests.post(
+                    url, json=query, proxies={"http": None, "https": None}
+                )
                 assert response.status_code == 200
                 assert response.json() == {"data": {"number": 42}}
             except (
