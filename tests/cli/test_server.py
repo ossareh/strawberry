@@ -141,7 +141,7 @@ def test_automatic_reloading(tmp_path):
                 requests.ConnectionError,
                 ConnectionRefusedError,
             ):
-                time.sleep(0.5)
+                time.sleep(2.0)
 
         schema_file_path.write_text(source.format(1234))
 
