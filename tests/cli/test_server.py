@@ -99,7 +99,7 @@ def test_automatic_reloading(xprocess, tmp_path):
     class Starter(ProcessStarter):
         pattern = "^Running strawberry on http.+"
         terminate_on_interrupt = True
-        timeout = 10
+        timeout = 100
         args = [
             "poetry",
             "run",
