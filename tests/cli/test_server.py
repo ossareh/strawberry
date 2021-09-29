@@ -97,7 +97,7 @@ def test_automatic_reloading(xprocess, tmp_path):
 
     # used to start our dev server
     class Starter(ProcessStarter):
-        env = {"PYTHONUNBUFFERED": "1"}
+        env = {"PYTHONUNBUFFERED": "1", **os.environ}
         pattern = "^Running strawberry on http.+"
         terminate_on_interrupt = True
         timeout = 10
@@ -127,9 +127,7 @@ def test_automatic_reloading(xprocess, tmp_path):
     schema_file_path.touch()
     schema_file_path.write_text(source.format(42))
 
-    log = xprocess.ensure("dev_server", Starter)
-    print(log)
-    assert False
+    xprocess.ensure("dev_server", Starter)
 
     url = "http://127.0.0.1:8000/graphql"
     query = {"query": "{ number }"}
