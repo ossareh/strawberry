@@ -106,7 +106,7 @@ def test_automatic_reloading(xprocess, tmp_path):
     class Starter(ProcessStarter):
         # Unbuffered output improves start up detection reliabiity on Windows
         env = {"PYTHONUNBUFFERED": "1", **os.environ}
-        # considered startd once this pattern is found
+        # considered started once this pattern is found
         pattern = BOOT_MSG_RE
         terminate_on_interrupt = True
         timeout = 10
@@ -141,9 +141,12 @@ def test_automatic_reloading(xprocess, tmp_path):
     url = "http://127.0.0.1:8000/graphql"
     query = {"query": "{ number }"}
 
+    # this disables proxy use on Windows
+    proxies = {"http": None}
+
     for _ in range(5):
         try:
-            response = requests.post(url, json=query)
+            response = requests.post(url, json=query, proxies=proxies)
             assert response.status_code == 200
             assert response.json() == {"data": {"number": 42}}
         except requests.RequestException:
@@ -155,7 +158,7 @@ def test_automatic_reloading(xprocess, tmp_path):
     # It takes uvicorn some time to detect file changes
     for _ in range(5):
         try:
-            response = requests.post(url, json=query)
+            response = requests.post(url, json=query, proxies=proxies)
             assert response.status_code == 200
             assert response.json() == {"data": {"number": 1234}}
         except AssertionError:
