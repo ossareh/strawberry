@@ -49,12 +49,12 @@ jobs:
       - name: pytest
         run: poetry run py.test --cov-report xml --cov=. --cov-fail-under 80 --showlocals -vv
 
-      - uses: codecov/codecov-action@v1
-        if: ${{ always() }}
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: true
-          verbose: true
+      # - uses: codecov/codecov-action@v1
+      #   if: ${{ always() }}
+      #   with:
+      #     token: ${{ secrets.CODECOV_TOKEN }}
+      #     fail_ci_if_error: true
+      #     verbose: true
 
   mypy:
     runs-on: ubuntu-latest
